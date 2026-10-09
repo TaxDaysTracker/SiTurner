@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Offshore Days</title>
+<meta name="description" content="Track days out of the UK against the half-of-all-days test from the IR 205(S) working sheet.">
+<meta name="theme-color" content="#1F6E8C">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+:root{
+  --bg:#F4F6F8; --surface:#FFFFFF; --ink:#18222E; --muted:#5E6B78; --rule:#D9E0E6;
+  --abroad:#1F6E8C; --on-abroad:#FFFFFF; --home:#B8892A; --danger:#B23A48; --ok:#2E7D5B;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#121A22; --surface:#1A242E; --ink:#E6ECF1; --muted:#93A1AE; --rule:#2A3642;
+    --abroad:#5BB3D1; --on-abroad:#0D1A20; --home:#E0B654; --danger:#F07A86; --ok:#6CC79C; color-scheme:dark; }
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16px;line-height:1.5;font-variant-numeric:tabular-nums;-webkit-tap-highlight-color:transparent}
+main{max-width:640px;margin:0 auto;padding:20px 16px 120px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+h1{font-size:16px;font-weight:600;margin:0;color:var(--muted)}
+.brand{display:flex;align-items:center;gap:10px}
+.ship{width:76px;height:auto;display:block;overflow:visible}
+@media (prefers-reduced-motion:no-preference){.ship{animation:bob 4s ease-in-out infinite}@keyframes bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-1.5px) rotate(-1deg)}}}
+h2{font-size:19px;font-weight:600;margin:0 0 4px}
+p{margin:0}
+.icon-btn{background:none;border:none;color:var(--ink);width:44px;height:44px;border-radius:22px;display:grid;place-items:center;cursor:pointer}
+.icon-btn svg{width:24px;height:24px}
+.verdict{font-size:clamp(30px,8.5vw,44px);line-height:1.1;font-weight:600;letter-spacing:-.02em;margin:18px 0 0}
+.verdict .n{color:var(--ok)}
+.verdict.over .n{color:var(--danger)}
+.sub{color:var(--muted);margin-top:12px;font-size:15px}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
+.countdown{margin-top:22px;background:var(--surface);border:1px solid var(--rule);border-left:6px solid var(--ok);border-radius:14px;padding:16px 18px}
+.countdown.soon{border-left-color:var(--home)}
+.countdown.fail{border-left-color:var(--danger)}
+.countdown h2{font-size:14px;font-weight:600;color:var(--muted);margin:0}
+.countdown .big{font-size:clamp(40px,12vw,60px);font-weight:700;line-height:1;letter-spacing:-.03em;margin-top:6px}
+.countdown .big small{font-size:18px;font-weight:600;letter-spacing:0;margin-left:6px}
+.countdown.fail .big{color:var(--danger)}
+.countdown .when{font-size:17px;font-weight:600;margin-top:8px}
+.countdown p.sub{margin-top:6px}
+.meter{height:8px;border-radius:4px;background:var(--rule);margin-top:14px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--ok);border-radius:4px}
+.countdown.soon .meter i{background:var(--home)}
+.facts b{display:block;font-size:22px;font-weight:600}
+.facts span{color:var(--muted);font-size:13px;line-height:1.3;display:block}
+section{margin-top:40px}
+.lede{color:var(--muted);font-size:15px}
+.chart{margin-top:14px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:6px}
+.sw{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.trips{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.trip{width:100%;text-align:left;font:inherit;color:inherit;background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:14px 16px;cursor:pointer;display:block}
+.trip-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.trip-dates{font-weight:600}
+.trip-away{color:var(--abroad);font-weight:600;white-space:nowrap}
+.trip-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;font-size:14px}
+.trip-stats span{display:block;color:var(--muted);font-size:12px}
+.trip.over{border-color:var(--danger)}
+.neg{color:var(--danger);font-weight:600}
+.trip-num{color:var(--muted);font-weight:400;font-size:14px;margin-right:6px}
+.empty{background:var(--surface);border:1px dashed var(--rule);border-radius:14px;padding:28px 20px;text-align:center;color:var(--muted);margin-top:14px}
+.fab{position:fixed;right:max(16px,calc((100vw - 640px)/2 + 16px));bottom:calc(20px + env(safe-area-inset-bottom,0px));
+  background:var(--abroad);color:var(--on-abroad);border:none;border-radius:16px;padding:16px 22px;font:inherit;font-weight:600;
+  box-shadow:0 3px 10px rgba(16,40,52,.28);display:flex;align-items:center;gap:8px;cursor:pointer}
+.fab svg{width:22px;height:22px}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:16px;margin-top:14px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:flex;flex-direction:column;font-size:14px;color:var(--muted);gap:4px}
+input[type=date]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--rule);border-radius:8px;padding:10px;width:100%;min-height:46px}
+button{font:inherit}
+.btn{font-weight:600;border-radius:10px;padding:11px 18px;cursor:pointer;border:1px solid transparent;min-height:44px}
+.btn.primary{background:var(--abroad);color:var(--on-abroad)}
+.btn.quiet{background:transparent;color:var(--ink);border-color:var(--rule)}
+.btn.danger{background:transparent;color:var(--danger);border-color:transparent;padding-left:0}
+.actions{display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:18px;flex-wrap:wrap}
+.actions .spacer{flex:1}
+.msg{font-size:14px;margin-top:10px;min-height:1.4em;color:var(--danger)}
+.plan-out{margin-top:12px;font-size:17px}
+.plan-out .n{font-weight:600}
+:focus-visible{outline:2px solid var(--abroad);outline-offset:2px}
+dialog{border:none;padding:0;background:var(--surface);color:var(--ink);width:100%;max-width:640px;margin:auto auto 0;border-radius:20px 20px 0 0;
+  padding-bottom:env(safe-area-inset-bottom,0px)}
+dialog::backdrop{background:rgba(8,16,22,.45)}
+.sheet{padding:22px 18px 18px}
+.sheet h2{margin-bottom:16px}
+.menu{display:flex;flex-direction:column}
+.menu button{background:none;border:none;color:var(--ink);text-align:left;padding:14px 4px;border-bottom:1px solid var(--rule);cursor:pointer}
+.menu button:last-child{border-bottom:none}
+.menu small{display:block;color:var(--muted);font-size:13px}
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:10px;font-size:14px;max-width:calc(100vw - 32px);opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+.note{color:var(--muted);font-size:13px;margin-top:28px}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <div class="brand">
+      <svg class="ship" viewBox="0 0 120 52" aria-hidden="true">
+        <!-- funnel and mast -->
+        <rect x="70" y="9" width="7" height="12" rx="1" fill="var(--home)"/>
+        <rect x="70" y="9" width="7" height="3" fill="var(--ink)"/>
+        <line x1="88" y1="4" x2="88" y2="18" stroke="var(--ink)" stroke-width="1.6" stroke-linecap="round"/>
+        <line x1="84" y1="8" x2="92" y2="8" stroke="var(--ink)" stroke-width="1.4" stroke-linecap="round"/>
+        <!-- bridge -->
+        <path d="M66 21 H96 L100 32 H66 Z" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round"/>
+        <rect x="79" y="16" width="15" height="6" rx="1" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.6"/>
+        <rect x="83" y="24" width="4" height="3" fill="var(--abroad)"/><rect x="89" y="24" width="4" height="3" fill="var(--abroad)"/>
+        <!-- hull -->
+        <path d="M10 32 H108 L102 42 H18 Z" fill="var(--abroad)" stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round"/>
+        <line x1="14" y1="36" x2="105" y2="36" stroke="var(--surface)" stroke-width="1.4"/>
+        <!-- deck cargo -->
+        <rect x="22" y="26" width="12" height="6" fill="var(--home)" stroke="var(--ink)" stroke-width="1.4"/>
+        <rect x="36" y="26" width="12" height="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.4"/>
+        <rect x="50" y="26" width="12" height="6" fill="var(--home)" stroke="var(--ink)" stroke-width="1.4"/>
+        <!-- waves -->
+        <path class="wave" d="M0 46 q7.5 -4 15 0 t15 0 t15 0 t15 0 t15 0 t15 0 t15 0 t15 0 t15 0" fill="none" stroke="var(--abroad)" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <h1>Offshore Days</h1>
+    </div>
+    <button class="icon-btn" id="menu-btn" aria-label="Backup and restore">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+    </button>
+  </div>
+  <div id="summary"></div>
+  <div id="chart-section"></div>
+  <section>
+    <h2>Trips</h2>
+    <div id="trip-list"></div>
+  </section>
+  <div id="plan-section"></div>
+  <p class="note">Trips are stored on this phone only. Use the menu to save a backup file now and then.</p>
+</main>
+
+<button class="fab" id="add-btn">
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
+  Add trip
+</button>
+
+<dialog id="trip-dialog" aria-labelledby="trip-dialog-title">
+  <form class="sheet" id="trip-form" method="dialog" novalidate>
+    <h2 id="trip-dialog-title">Add trip</h2>
+    <div class="row">
+      <label>Date of departure<input type="date" id="f-dep" required></label>
+      <label>Date of return<input type="date" id="f-ret" required></label>
+    </div>
+    <div class="msg" id="form-msg" aria-live="polite"></div>
+    <div class="actions">
+      <button type="button" class="btn danger" id="delete-btn" hidden>Delete trip</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn quiet" id="cancel-btn">Cancel</button>
+      <button type="submit" class="btn primary" id="save-btn">Save trip</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="menu-dialog" aria-labelledby="menu-title">
+  <div class="sheet">
+    <h2 id="menu-title">Your data</h2>
+    <div class="menu">
+      <button type="button" id="export-json">Save backup<small>Downloads a file with all your trips</small></button>
+      <button type="button" id="import-json">Restore backup<small>Replaces your trips with a saved backup file</small></button>
+      <button type="button" id="export-csv">Download as spreadsheet<small>A CSV file with every column from the working sheet</small></button>
+      <button type="button" id="clear-all">Delete all trips<small>Removes every trip from this phone</small></button>
+    </div>
+    <div class="actions"><button type="button" class="btn quiet" id="menu-close">Close</button></div>
+  </div>
+</dialog>
+<input type="file" id="file-input" accept="application/json,.json" hidden>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+  var DAY = 86400000, KEY = "offshore-days:trips";
+  var trips = load();
+  var editIndex = -1;
+
+  function load(){
+    try { var t = JSON.parse(localStorage.getItem(KEY) || "[]"); return Array.isArray(t) ? t.filter(valid) : []; }
+    catch(e){ return []; }
+  }
+  function valid(t){ return t && /^\d{4}-\d{2}-\d{2}$/.test(t.dep) && /^\d{4}-\d{2}-\d{2}$/.test(t.ret) && dn(t.ret) > dn(t.dep); }
+  function persist(){
+    try { localStorage.setItem(KEY, JSON.stringify(trips)); return true; }
+    catch(e){ toast("Couldn't save on this phone. Check that storage isn't full."); return false; }
+  }
+  if (navigator.storage && navigator.storage.persist) { navigator.storage.persist().catch(function(){}); }
+
+  function dn(s){ var p = s.split("-"); return Date.UTC(+p[0], +p[1]-1, +p[2]) / DAY; }
+  function fmt(s){ return new Date(dn(s)*DAY).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric",timeZone:"UTC"}); }
+  function fmtShort(s){ return new Date(dn(s)*DAY).toLocaleDateString("en-GB",{day:"numeric",month:"short",timeZone:"UTC"}); }
+  function num(n){ return Number.isInteger(n) ? String(n) : n.toFixed(1); }
+  function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];}); }
+  function sortTrips(list){ return list.sort(function(a,b){ return dn(a.dep)-dn(b.dep); }); }
+  function today(){ var d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+
+  // Same arithmetic as the IR 205(S) working sheet (box 1.37):
+  // C days away = return - departure; D days in UK = departure - previous return;
+  // E running total = return - first departure; F = E x 1/2; G running UK days;
+  // H = is G greater than F; days in hand = F - G.
+  function compute(list){
+    var rows = [], uk = 0;
+    if (!list.length) return rows;
+    var start = dn(list[0].dep);
+    list.forEach(function(t,i){
+      var inUK = i ? dn(t.dep) - dn(list[i-1].ret) : null;
+      if (i) uk += inUK;
+      var total = dn(t.ret) - start, half = total/2;
+      rows.push({dep:t.dep, ret:t.ret, away:dn(t.ret)-dn(t.dep), inUK:inUK, total:total, half:half, uk:uk, over:uk>half, hand:half-uk});
+    });
+    return rows;
+  }
+
+  function chart(rows){
+    var W = 360, padL = 34, padR = 6, rY = 4, rH = 20, lTop = 44, lH = 110, H = lTop + lH + 22;
+    var start = dn(rows[0].dep), end = dn(rows[rows.length-1].ret), span = Math.max(1, end-start);
+    function x(d){ return padL + (d-start)/span*(W-padL-padR); }
+    function y(v){ return lTop + (1-v)*lH; }
+    var s = '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Days away and in the UK, with the UK share of days after each trip">';
+    s += '<rect x="'+padL+'" y="'+rY+'" width="'+(W-padL-padR)+'" height="'+rH+'" rx="3" fill="var(--home)"/>';
+    rows.forEach(function(r){ var a = x(dn(r.dep)), b = x(dn(r.ret)); s += '<rect x="'+a.toFixed(1)+'" y="'+rY+'" width="'+Math.max(1.2,b-a).toFixed(1)+'" height="'+rH+'" fill="var(--abroad)"/>'; });
+    [0,.5,1].forEach(function(v){
+      s += '<line x1="'+padL+'" x2="'+(W-padR)+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="'+(v===.5?'var(--danger)':'var(--rule)')+'" stroke-width="'+(v===.5?1.3:1)+'"'+(v===.5?' stroke-dasharray="4 3"':'')+'/>';
+      s += '<text x="'+(padL-6)+'" y="'+(y(v)+4)+'" text-anchor="end" font-size="10" fill="var(--muted)">'+(v*100)+'%</text>';
+    });
+    var pts = rows.filter(function(r){ return r.total>0; }).map(function(r){ return [x(dn(r.ret)), y(r.uk/r.total), r.over]; });
+    if (pts.length > 1) s += '<polyline fill="none" stroke="var(--ink)" stroke-width="1.8" points="'+pts.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ')+'"/>';
+    pts.forEach(function(p){ s += '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3.2" fill="'+(p[2]?'var(--danger)':'var(--surface)')+'" stroke="'+(p[2]?'var(--danger)':'var(--ink)')+'" stroke-width="1.6"/>'; });
+    s += '<text x="'+padL+'" y="'+(H-4)+'" font-size="10" fill="var(--muted)">'+esc(fmt(rows[0].dep))+'</text>';
+    s += '<text x="'+(W-padR)+'" y="'+(H-4)+'" text-anchor="end" font-size="10" fill="var(--muted)">'+esc(fmt(rows[rows.length-1].ret))+'</text>';
+    return s + '</svg>';
+  }
+
+
+  // Days until failure: staying in the UK after your last return adds one UK day and one day to the
+  // running total each day. The test fails once UK days > half of all days, i.e. after 2 x days in hand
+  // more days. Leaving on (last return + that many days) still passes, because the sheet counts
+  // UK days as departure date minus previous return date.
+  function countdown(last){
+    var allowance = Math.floor(2*last.hand);
+    var h = '';
+    if (allowance < 0){
+      return '<div class="countdown fail"><h2>Days until failure</h2><p class="big">0</p><p class="when">You are already over half.</p><p class="sub">Your next trip needs to be long enough to bring your UK days back under half. Use Plan a trip to check one.</p></div>';
+    }
+    var leaveBy = addDays(last.ret, allowance), left = dn(leaveBy) - dn(today());
+    var cls = left < 0 ? "fail" : left <= 7 ? "soon" : "";
+    var pct = allowance > 0 ? Math.max(0, Math.min(100, left/allowance*100)) : 0;
+    h += '<div class="countdown '+cls+'"><h2>Days until failure</h2>';
+    if (left > 0){
+      h += '<p class="big">'+left+'<small>'+(left===1?'day':'days')+'</small></p>';
+      h += '<p class="when">Leave the UK by '+esc(fmtDay(leaveBy))+'.</p>';
+      h += '<p class="sub">If you stay in the UK after that, your UK days become more than half of all days. A longer next trip gives you more room.</p>';
+      h += '<div class="meter" aria-hidden="true"><i style="width:'+pct.toFixed(1)+'%"></i></div>';
+    } else if (left === 0){
+      h += '<p class="big">0<small>days</small></p><p class="when">Today is your last day to leave the UK.</p>';
+      h += '<p class="sub">If you are still in the UK tomorrow, your UK days become more than half of all days.</p>';
+    } else {
+      h += '<p class="big">'+(-left)+'<small>'+(-left===1?'day':'days')+' past</small></p>';
+      h += '<p class="when">Your leave-by date was '+esc(fmtDay(leaveBy))+'.</p>';
+      h += '<p class="sub">This assumes you have been in the UK since your last return on '+esc(fmt(last.ret))+'. If you have travelled since, add those trips.</p>';
+    }
+    return h + '</div>';
+  }
+  function addDays(s, n){ return new Date((dn(s)+n)*DAY).toISOString().slice(0,10); }
+  function fmtDay(s){ return new Date(dn(s)*DAY).toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"UTC"}); }
+
+  function render(){
+    sortTrips(trips);
+    var rows = compute(trips), last = rows[rows.length-1];
+    var sum = "";
+    if (last){
+      sum += '<p class="verdict'+(last.over?' over':'')+'">'+(last.over
+        ? '<span class="n">'+num(-last.hand)+' days over</span> half your time in the UK.'
+        : 'You have <span class="n">'+num(last.hand)+' days in hand.</span>')+'</p>';
+      sum += '<p class="sub">As of your return on '+esc(fmt(last.ret))+'. Days in hand is how many more days you could have spent in the UK and still been away for at least half of all days since '+esc(fmt(rows[0].dep))+'.</p>';
+      sum += countdown(last);
+      sum += '<div class="facts"><div><b>'+last.total+'</b><span>days counted</span></div><div><b>'+(last.total-last.uk)+'</b><span>days away</span></div><div><b>'+last.uk+'</b><span>days in the UK</span></div></div>';
+    } else {
+      sum += '<p class="verdict">Add your first trip to start counting.</p><p class="sub">The count starts on the day you first leave the UK. Each trip needs a departure date and a return date.</p>';
+    }
+    document.getElementById("summary").innerHTML = sum;
+
+    document.getElementById("chart-section").innerHTML = rows.length ? '<section><h2>Away and at home</h2><p class="lede">The line is your share of days in the UK after each return. It needs to stay at or under the dashed line.</p><div class="chart">'+chart(rows)+'</div><div class="legend"><span><i class="sw" style="background:var(--abroad)"></i>Away</span><span><i class="sw" style="background:var(--home)"></i>In the UK</span></div></section>' : "";
+
+    var list = "";
+    if (!rows.length) list = '<div class="empty">No trips yet. Tap Add trip to enter your first one.</div>';
+    else {
+      list = '<ul class="trips">';
+      for (var i = rows.length-1; i >= 0; i--){
+        var r = rows[i];
+        list += '<li><button type="button" class="trip'+(r.over?' over':'')+'" data-i="'+i+'" aria-label="Edit trip '+(i+1)+', '+esc(fmt(r.dep))+' to '+esc(fmt(r.ret))+'">'
+          + '<div class="trip-head"><span class="trip-dates"><span class="trip-num">'+(i+1)+'</span>'+esc(fmtShort(r.dep))+' to '+esc(fmt(r.ret))+'</span><span class="trip-away">'+r.away+' days away</span></div>'
+          + '<div class="trip-stats"><div><span>UK days before</span>'+(r.inUK===null?'–':r.inUK)+'</div><div><span>UK days of total</span>'+r.uk+' / '+r.total+'</div><div><span>Days in hand</span><b class="'+(r.hand<0?'neg':'')+'">'+num(r.hand)+'</b></div></div></button></li>';
+      }
+      list += '</ul>';
+    }
+    document.getElementById("trip-list").innerHTML = list;
+    document.querySelectorAll(".trip").forEach(function(b){ b.addEventListener("click", function(){ openTrip(+b.getAttribute("data-i")); }); });
+
+    var plan = document.getElementById("plan-section");
+    if (last){
+      plan.innerHTML = '<section><h2>Plan a trip</h2><p class="lede">See where a future trip would leave you. Nothing here is saved.</p><form class="card" id="plan-form" novalidate><div class="row"><label>Leaving<input type="date" id="p-dep" min="'+last.ret+'"></label><label>Back<input type="date" id="p-ret" min="'+last.ret+'"></label></div><div class="actions"><button type="submit" class="btn quiet">Check trip</button></div><div class="plan-out" id="plan-out" aria-live="polite"></div></form></section>';
+      document.getElementById("plan-form").addEventListener("submit", checkPlan);
+    } else plan.innerHTML = "";
+  }
+
+  function validate(dep, ret, skip){
+    if (!dep || !ret) return "Enter both a departure date and a return date.";
+    if (dn(ret) <= dn(dep)) return "The return date needs to be after the departure date.";
+    for (var i = 0; i < trips.length; i++){
+      if (i === skip) continue;
+      var t = trips[i];
+      if (dn(dep) < dn(t.ret) && dn(ret) > dn(t.dep)) return "This overlaps your trip from "+fmt(t.dep)+" to "+fmt(t.ret)+".";
+    }
+    return "";
+  }
+
+  function checkPlan(e){
+    e.preventDefault();
+    var dep = document.getElementById("p-dep").value, ret = document.getElementById("p-ret").value, out = document.getElementById("plan-out");
+    var err = validate(dep, ret, -1);
+    if (err){ out.innerHTML = '<span class="neg">'+esc(err)+'</span>'; return; }
+    var r = compute(sortTrips(trips.concat([{dep:dep, ret:ret}])));
+    r = r[r.length-1];
+    out.innerHTML = r.over
+      ? 'Back on '+esc(fmt(r.ret))+', you would have spent '+r.uk+' of '+r.total+' days in the UK: <span class="n neg">'+num(-r.hand)+' days over half.</span>'
+      : 'Back on '+esc(fmt(r.ret))+', you would have spent '+r.uk+' of '+r.total+' days in the UK, leaving <span class="n">'+num(r.hand)+' days in hand.</span>';
+  }
+
+  // Trip sheet
+  var tripDialog = document.getElementById("trip-dialog");
+  function openTrip(i){
+    editIndex = i;
+    var t = i >= 0 ? trips[i] : null;
+    document.getElementById("trip-dialog-title").textContent = t ? "Edit trip "+(i+1) : "Add trip";
+    document.getElementById("f-dep").value = t ? t.dep : "";
+    document.getElementById("f-ret").value = t ? t.ret : "";
+    document.getElementById("delete-btn").hidden = !t;
+    document.getElementById("form-msg").textContent = "";
+    tripDialog.showModal();
+  }
+  document.getElementById("add-btn").addEventListener("click", function(){ openTrip(-1); });
+  document.getElementById("cancel-btn").addEventListener("click", function(){ tripDialog.close(); });
+  document.getElementById("trip-form").addEventListener("submit", function(e){
+    e.preventDefault();
+    var dep = document.getElementById("f-dep").value, ret = document.getElementById("f-ret").value;
+    var err = validate(dep, ret, editIndex);
+    if (err){ document.getElementById("form-msg").textContent = err; return; }
+    var t = {dep:dep, ret:ret};
+    if (editIndex >= 0) trips[editIndex] = t; else trips.push(t);
+    if (persist()){ tripDialog.close(); render(); toast("Trip saved."); }
+  });
+  document.getElementById("delete-btn").addEventListener("click", function(){
+    var t = trips[editIndex];
+    if (!confirm("Delete the trip from "+fmt(t.dep)+" to "+fmt(t.ret)+"?")) return;
+    trips.splice(editIndex, 1);
+    if (persist()){ tripDialog.close(); render(); toast("Trip deleted."); }
+  });
+
+  // Data menu
+  var menuDialog = document.getElementById("menu-dialog");
+  document.getElementById("menu-btn").addEventListener("click", function(){ menuDialog.showModal(); });
+  document.getElementById("menu-close").addEventListener("click", function(){ menuDialog.close(); });
+  [tripDialog, menuDialog].forEach(function(d){ d.addEventListener("click", function(e){ if (e.target === d) d.close(); }); });
+
+  function download(name, text, type){
+    var url = URL.createObjectURL(new Blob([text], {type:type}));
+    var a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+  }
+  document.getElementById("export-json").addEventListener("click", function(){
+    if (!trips.length){ toast("There are no trips to back up yet."); return; }
+    download("offshore-days-backup-"+today()+".json", JSON.stringify({app:"offshore-days", version:1, trips:trips}, null, 2), "application/json");
+    menuDialog.close(); toast("Backup saved to your downloads.");
+  });
+  document.getElementById("export-csv").addEventListener("click", function(){
+    var rows = compute(trips);
+    if (!rows.length){ toast("There are no trips to download yet."); return; }
+    var lines = ["Trip,Date of departure,Date of return,Days out of UK,Days in UK,Running total of all days,Half of all days,Running total of UK days,Over half?,Days in hand"];
+    rows.forEach(function(r,i){ lines.push([i+1, r.dep, r.ret, r.away, r.inUK===null?"":r.inUK, r.total, r.half, r.uk, r.over?"YES":"NO", r.hand].join(",")); });
+    download("offshore-days-"+today()+".csv", lines.join("\r\n")+"\r\n", "text/csv");
+    menuDialog.close(); toast("Spreadsheet saved to your downloads.");
+  });
+  var fileInput = document.getElementById("file-input");
+  document.getElementById("import-json").addEventListener("click", function(){ fileInput.value = ""; fileInput.click(); });
+  fileInput.addEventListener("change", function(){
+    var f = fileInput.files && fileInput.files[0]; if (!f) return;
+    f.text().then(function(text){
+      var data = JSON.parse(text), list = Array.isArray(data) ? data : data && data.trips;
+      if (!Array.isArray(list)) throw new Error("shape");
+      list = list.map(function(t){ return {dep:String(t.dep), ret:String(t.ret)}; });
+      if (!list.every(valid)) throw new Error("dates");
+      sortTrips(list);
+      for (var i = 1; i < list.length; i++) if (dn(list[i].dep) < dn(list[i-1].ret)) throw new Error("overlap");
+      if (trips.length && !confirm("Replace your "+trips.length+" trips with the "+list.length+" in this backup?")) return;
+      trips = list;
+      if (persist()){ render(); menuDialog.close(); toast("Restored "+list.length+" trips."); }
+    }).catch(function(){ toast("That file isn't an Offshore Days backup, so nothing was changed."); });
+  });
+  document.getElementById("clear-all").addEventListener("click", function(){
+    if (!trips.length){ toast("There are no trips to delete."); return; }
+    if (!confirm("Delete all "+trips.length+" trips from this phone? Save a backup first if you might need them.")) return;
+    trips = []; if (persist()){ render(); menuDialog.close(); toast("All trips deleted."); }
+  });
+
+  var toastTimer;
+  function toast(t){ var el = document.getElementById("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(function(){ el.classList.remove("show"); }, 2600); }
+
+  render();
+  // Keep the countdown current when the app is reopened on a later day.
+  var renderedOn = today();
+  document.addEventListener("visibilitychange", function(){ if (!document.hidden && today() !== renderedOn){ renderedOn = today(); render(); } });
+  setInterval(function(){ if (today() !== renderedOn){ renderedOn = today(); render(); } }, 60000);
+
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
+  }
+})();
+</script>
+</body>
+</html>
