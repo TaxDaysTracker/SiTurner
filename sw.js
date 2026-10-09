@@ -1,5 +1,5 @@
 // Offshore Days offline cache. Bump VERSION when any app file changes.
-const VERSION = "offshore-days-v2";
+const VERSION = "offshore-days-v4";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png",
   "icons/maskable-192.png", "icons/maskable-512.png", "icons/apple-touch-icon.png"];
 

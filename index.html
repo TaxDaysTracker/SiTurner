@@ -77,7 +77,11 @@ section{margin-top:40px}
 .card{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:16px;margin-top:14px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 label{display:flex;flex-direction:column;font-size:14px;color:var(--muted);gap:4px}
-input[type=date]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--rule);border-radius:8px;padding:10px;width:100%;min-height:46px}
+input[type=date],textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--rule);border-radius:8px;padding:10px;width:100%;min-height:46px}
+textarea{resize:vertical;min-height:84px;line-height:1.4}
+.field-full{margin-top:12px}
+.count{align-self:flex-end;font-size:12px;color:var(--muted)}
+.trip-note{display:block;margin-top:6px;font-size:14px;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere}
 button{font:inherit}
 .btn{font-weight:600;border-radius:10px;padding:11px 18px;cursor:pointer;border:1px solid transparent;min-height:44px}
 .btn.primary{background:var(--abroad);color:var(--on-abroad)}
@@ -157,6 +161,7 @@ dialog::backdrop{background:rgba(8,16,22,.45)}
       <label>Date of departure<input type="date" id="f-dep" required></label>
       <label>Date of return<input type="date" id="f-ret" required></label>
     </div>
+    <label class="field-full">Voyage details (optional)<textarea id="f-note" rows="3" maxlength="300" placeholder="e.g. vessel, field or rig, port, crew change"></textarea><span class="count" id="note-count" aria-live="off">0 / 300</span></label>
     <div class="msg" id="form-msg" aria-live="polite"></div>
     <div class="actions">
       <button type="button" class="btn danger" id="delete-btn" hidden>Delete trip</button>
@@ -190,9 +195,10 @@ dialog::backdrop{background:rgba(8,16,22,.45)}
   var editIndex = -1;
 
   function load(){
-    try { var t = JSON.parse(localStorage.getItem(KEY) || "[]"); return Array.isArray(t) ? t.filter(valid) : []; }
+    try { var t = JSON.parse(localStorage.getItem(KEY) || "[]"); return Array.isArray(t) ? t.filter(valid).map(function(x){ return {dep:x.dep, ret:x.ret, note:cleanNote(x.note)}; }) : []; }
     catch(e){ return []; }
   }
+  function cleanNote(n){ return typeof n === "string" ? n.trim().slice(0,300) : ""; }
   function valid(t){ return t && /^\d{4}-\d{2}-\d{2}$/.test(t.dep) && /^\d{4}-\d{2}-\d{2}$/.test(t.ret) && dn(t.ret) > dn(t.dep); }
   function persist(){
     try { localStorage.setItem(KEY, JSON.stringify(trips)); return true; }
@@ -220,7 +226,7 @@ dialog::backdrop{background:rgba(8,16,22,.45)}
       var inUK = i ? dn(t.dep) - dn(list[i-1].ret) : null;
       if (i) uk += inUK;
       var total = dn(t.ret) - start, half = total/2;
-      rows.push({dep:t.dep, ret:t.ret, away:dn(t.ret)-dn(t.dep), inUK:inUK, total:total, half:half, uk:uk, over:uk>half, hand:half-uk});
+      rows.push({dep:t.dep, ret:t.ret, note:t.note || "", away:dn(t.ret)-dn(t.dep), inUK:inUK, total:total, half:half, uk:uk, over:uk>half, hand:half-uk});
     });
     return rows;
   }
@@ -304,6 +310,7 @@ dialog::backdrop{background:rgba(8,16,22,.45)}
         var r = rows[i];
         list += '<li><button type="button" class="trip'+(r.over?' over':'')+'" data-i="'+i+'" aria-label="Edit trip '+(i+1)+', '+esc(fmt(r.dep))+' to '+esc(fmt(r.ret))+'">'
           + '<div class="trip-head"><span class="trip-dates"><span class="trip-num">'+(i+1)+'</span>'+esc(fmtShort(r.dep))+' to '+esc(fmt(r.ret))+'</span><span class="trip-away">'+r.away+' days away</span></div>'
+          + (r.note ? '<span class="trip-note">'+esc(r.note)+'</span>' : '')
           + '<div class="trip-stats"><div><span>UK days before</span>'+(r.inUK===null?'–':r.inUK)+'</div><div><span>UK days of total</span>'+r.uk+' / '+r.total+'</div><div><span>Days in hand</span><b class="'+(r.hand<0?'neg':'')+'">'+num(r.hand)+'</b></div></div></button></li>';
       }
       list += '</ul>';
@@ -343,12 +350,16 @@ dialog::backdrop{background:rgba(8,16,22,.45)}
 
   // Trip sheet
   var tripDialog = document.getElementById("trip-dialog");
+  function updateCount(){ document.getElementById("note-count").textContent = document.getElementById("f-note").value.length + " / 300"; }
+  document.getElementById("f-note").addEventListener("input", updateCount);
   function openTrip(i){
     editIndex = i;
     var t = i >= 0 ? trips[i] : null;
     document.getElementById("trip-dialog-title").textContent = t ? "Edit trip "+(i+1) : "Add trip";
     document.getElementById("f-dep").value = t ? t.dep : "";
     document.getElementById("f-ret").value = t ? t.ret : "";
+    document.getElementById("f-note").value = t ? (t.note || "") : "";
+    updateCount();
     document.getElementById("delete-btn").hidden = !t;
     document.getElementById("form-msg").textContent = "";
     tripDialog.showModal();
@@ -360,7 +371,7 @@ dialog::backdrop{background:rgba(8,16,22,.45)}
     var dep = document.getElementById("f-dep").value, ret = document.getElementById("f-ret").value;
     var err = validate(dep, ret, editIndex);
     if (err){ document.getElementById("form-msg").textContent = err; return; }
-    var t = {dep:dep, ret:ret};
+    var t = {dep:dep, ret:ret, note:cleanNote(document.getElementById("f-note").value)};
     if (editIndex >= 0) trips[editIndex] = t; else trips.push(t);
     if (persist()){ tripDialog.close(); render(); toast("Trip saved."); }
   });
@@ -377,23 +388,37 @@ dialog::backdrop{background:rgba(8,16,22,.45)}
   document.getElementById("menu-close").addEventListener("click", function(){ menuDialog.close(); });
   [tripDialog, menuDialog].forEach(function(d){ d.addEventListener("click", function(e){ if (e.target === d) d.close(); }); });
 
-  function download(name, text, type){
+  // In the Android app, files are saved through the native bridge (the user picks where);
+  // in a browser, a normal download is used.
+  window.__saveDone = null;
+  function download(name, text, type, done){
+    if (window.AndroidBridge && window.AndroidBridge.saveFile){
+      window.__saveDone = function(ok){ window.__saveDone = null; done(ok, false); };
+      window.AndroidBridge.saveFile(name, type, text);
+      return;
+    }
     var url = URL.createObjectURL(new Blob([text], {type:type}));
     var a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+    done(true, true);
   }
   document.getElementById("export-json").addEventListener("click", function(){
     if (!trips.length){ toast("There are no trips to back up yet."); return; }
-    download("offshore-days-backup-"+today()+".json", JSON.stringify({app:"offshore-days", version:1, trips:trips}, null, 2), "application/json");
-    menuDialog.close(); toast("Backup saved to your downloads.");
+    menuDialog.close();
+    download("offshore-days-backup-"+today()+".json", JSON.stringify({app:"offshore-days", version:1, trips:trips}, null, 2), "application/json", function(ok, toDownloads){
+      toast(ok ? (toDownloads ? "Backup saved to your downloads." : "Backup saved.") : "Backup not saved.");
+    });
   });
+  function csvCell(v){ v = String(v || ""); return /[",\r\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }
   document.getElementById("export-csv").addEventListener("click", function(){
     var rows = compute(trips);
     if (!rows.length){ toast("There are no trips to download yet."); return; }
-    var lines = ["Trip,Date of departure,Date of return,Days out of UK,Days in UK,Running total of all days,Half of all days,Running total of UK days,Over half?,Days in hand"];
-    rows.forEach(function(r,i){ lines.push([i+1, r.dep, r.ret, r.away, r.inUK===null?"":r.inUK, r.total, r.half, r.uk, r.over?"YES":"NO", r.hand].join(",")); });
-    download("offshore-days-"+today()+".csv", lines.join("\r\n")+"\r\n", "text/csv");
-    menuDialog.close(); toast("Spreadsheet saved to your downloads.");
+    var lines = ["Trip,Date of departure,Date of return,Days out of UK,Days in UK,Running total of all days,Half of all days,Running total of UK days,Over half?,Days in hand,Voyage details"];
+    rows.forEach(function(r,i){ lines.push([i+1, r.dep, r.ret, r.away, r.inUK===null?"":r.inUK, r.total, r.half, r.uk, r.over?"YES":"NO", r.hand, csvCell(r.note)].join(",")); });
+    menuDialog.close();
+    download("offshore-days-"+today()+".csv", lines.join("\r\n")+"\r\n", "text/csv", function(ok, toDownloads){
+      toast(ok ? (toDownloads ? "Spreadsheet saved to your downloads." : "Spreadsheet saved.") : "Spreadsheet not saved.");
+    });
   });
   var fileInput = document.getElementById("file-input");
   document.getElementById("import-json").addEventListener("click", function(){ fileInput.value = ""; fileInput.click(); });
@@ -402,7 +427,7 @@ dialog::backdrop{background:rgba(8,16,22,.45)}
     f.text().then(function(text){
       var data = JSON.parse(text), list = Array.isArray(data) ? data : data && data.trips;
       if (!Array.isArray(list)) throw new Error("shape");
-      list = list.map(function(t){ return {dep:String(t.dep), ret:String(t.ret)}; });
+      list = list.map(function(t){ return {dep:String(t.dep), ret:String(t.ret), note:cleanNote(t.note)}; });
       if (!list.every(valid)) throw new Error("dates");
       sortTrips(list);
       for (var i = 1; i < list.length; i++) if (dn(list[i].dep) < dn(list[i-1].ret)) throw new Error("overlap");
@@ -419,6 +444,13 @@ dialog::backdrop{background:rgba(8,16,22,.45)}
 
   var toastTimer;
   function toast(t){ var el = document.getElementById("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(function(){ el.classList.remove("show"); }, 2600); }
+
+  // Android back button: close an open sheet before leaving the app.
+  window.offshoreBack = function(){
+    var open = document.querySelector("dialog[open]");
+    if (open){ open.close(); return true; }
+    return false;
+  };
 
   render();
   // Keep the countdown current when the app is reopened on a later day.
